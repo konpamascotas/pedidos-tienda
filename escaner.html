@@ -11,13 +11,41 @@
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
         button { width: 100%; background-color: #28a745; color: white; padding: 14px; border: none; border-radius: 4px; font-weight: bold; }
         #reader { width: 100%; margin-bottom: 10px; }
-    </style>
+   
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    background-color: #333;
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    margin-bottom: 20px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* Clase para resaltar la página activa */
+.nav-link.active {
+    background-color: #28a745;
+} </style>
 </head>
 <body>
 
 <div class="caja">
     <h3>Reposición de Productos</h3>
-    
+    <nav class="navbar">
+    <a href="index.html" class="nav-link" id="link-home">Inicio</a>
+    <a href="escaner.html" class="nav-link" id="link-scan">Escáner</a>
+    <a href="inventario.html" class="nav-link" id="link-list">Inventario</a>
+</nav>
     <div id="reader"></div>
 
     <!-- REQUISITO: La cámara se activa al entrar en este campo -->
@@ -79,6 +107,11 @@
         alert("Producto registrado en la tabla.");
         location.reload(); // Limpia el formulario
     }
+// Detecta la página actual y añade la clase 'active' al enlace correspondiente
+const path = window.location.pathname;
+if (path.includes("index")) document.getElementById("link-home").classList.add("active");
+if (path.includes("escaner")) document.getElementById("link-scan").classList.add("active");
+if (path.includes("inventario")) document.getElementById("link-list").classList.add("active");
 </script>
 
 </body>

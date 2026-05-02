@@ -12,12 +12,40 @@
         th { background: #28a745; color: white; }
         tr:nth-child(even) { background: #f9f9f9; }
         .status { text-align: center; margin-bottom: 10px; color: #666; }
-    </style>
+   
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    background-color: #333;
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    margin-bottom: 20px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* Clase para resaltar la página activa */
+.nav-link.active {
+    background-color: #28a745;
+} </style>
 </head>
 <body>
     <h2>Artículos en Almacén</h2>
     <p id="estado" class="status">Cargando lista...</p>
-    
+    <nav class="navbar">
+    <a href="index.html" class="nav-link" id="link-home">Inicio</a>
+    <a href="escaner.html" class="nav-link" id="link-scan">Escáner</a>
+    <a href="inventario.html" class="nav-link" id="link-list">Inventario</a>
+</nav>
     <div class="tabla-container">
         <table id="tabla-datos">
             <thead>
@@ -61,6 +89,11 @@
         }
 
         obtenerDatos();
+// Detecta la página actual y añade la clase 'active' al enlace correspondiente
+const path = window.location.pathname;
+if (path.includes("index")) document.getElementById("link-home").classList.add("active");
+if (path.includes("escaner")) document.getElementById("link-scan").classList.add("active");
+if (path.includes("inventario")) document.getElementById("link-list").classList.add("active");
     </script>
 </body>
 </html>

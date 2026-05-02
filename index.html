@@ -9,9 +9,38 @@
         .menu-btn { width: 80%; max-width: 300px; padding: 20px; margin: 10px; font-size: 18px; text-align: center; text-decoration: none; color: white; border-radius: 8px; font-weight: bold; }
         .blue { background-color: #007bff; }
         .green { background-color: #28a745; }
-    </style>
+   
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    background-color: #333;
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    margin-bottom: 20px;
+}
+
+.nav-link {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+/* Clase para resaltar la página activa */
+.nav-link.active {
+    background-color: #28a745;
+} </style>
 </head>
 <body>
+<nav class="navbar">
+    <a href="index.html" class="nav-link" id="link-home">Inicio</a>
+    <a href="escaner.html" class="nav-link" id="link-scan">Escáner</a>
+    <a href="inventario.html" class="nav-link" id="link-list">Inventario</a>
+</nav>
     <h1>Gestión de Tienda</h1>
     <a href="escaner.html" class="menu-btn blue">IR AL ESCÁNER</a>
     <a href="inventario.html" class="menu-btn green">VER INVENTARIO</a>
