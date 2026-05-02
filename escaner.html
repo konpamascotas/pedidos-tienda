@@ -6,51 +6,55 @@
     <title>Escáner de Tienda</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
-        .caja { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; background-color: #28a745; color: white; padding: 14px; border: none; border-radius: 4px; font-weight: bold; }
-        #reader { width: 100%; margin-bottom: 10px; }
-   
-.navbar {
-    display: flex;
-    justify-content: space-around;
-    background-color: #333;
-    padding: 12px 0;
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; margin: 0; }
+        .caja { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background-color: #28a745; color: white; padding: 14px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        button:active { background-color: #218838; }
+        #reader { width: 100%; margin-bottom: 10px; border-radius: 8px; overflow: hidden; }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #333;
+            padding: 12px 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
 
-.nav-link {
-    color: white;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 8px 15px;
-    border-radius: 5px;
-}
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 15px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-/* Resalta la página donde te encuentras */
-.nav-link.active {
-    background-color: #28a745;
-}
- </style>
+        .nav-link.active {
+            background-color: #28a745;
+        }
+    </style>
 </head>
 <body>
 
+<nav class="navbar">
+    <a href="index.html" class="nav-link" id="link-home">🏠 Inicio</a>
+    <a href="escaner.html" class="nav-link" id="link-scan">📷 Escáner</a>
+    <a href="inventario.html" class="nav-link" id="link-list">📋 Inventario</a>
+</nav>
+
 <div class="caja">
     <h3>Reposición de Productos</h3>
-<nav class="navbar">
-    <a href="index.html" class="nav-link" id="link-home">Inicio</a>
-    <a href="escaner.html" class="nav-link" id="link-scan">Escáner</a>
-    <a href="inventario.html" class="nav-link" id="link-list">Inventario</a>
-</nav>
+    
     <div id="reader"></div>
 
-    <!-- REQUISITO: La cámara se activa al entrar en este campo -->
     <label>EAN:</label>
     <input type="text" id="ean" placeholder="Toca para escanear" onfocus="iniciarCamara()">
     
@@ -67,30 +71,59 @@
 </div>
 
 <script>
-    // ************************************************************
-    // AQUÍ ES DONDE DEBES PEGAR TU URL:
-    // ************************************************************
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMqPWMvazKQk41sD4ZGCSvlmQU2_sFTNY9e-ECjyqCR8fHTbJifppE0t8Vbzgdv6UC-g/exec"; 
 
     let scanner;
 
+    // --- Lógica de Búsqueda Global ---
+    async function buscarProductoGlobal(ean) {
+        const campoNombre = document.getElementById('nombre');
+        campoNombre.value = "Buscando..."; // Estado inicial sugerido
+
+        try {
+            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${ean}.json`);
+            const data = await response.json();
+
+            if (data.status === 1 && data.product.product_name) {
+                campoNombre.value = data.product.product_name;
+            } else {
+                campoNombre.value = ""; // No encontrado: en blanco
+            }
+        } catch (error) {
+            console.error("Error en búsqueda:", error);
+            campoNombre.value = ""; // Error de red: en blanco
+        }
+        // Después de buscar (éxito o fallo), movemos el foco a Unidades
+        document.getElementById('unidades').focus();
+    }
+
+    // --- Lógica del Escáner ---
     function iniciarCamara() {
         if (!scanner) {
             scanner = new Html5Qrcode("reader");
             scanner.start(
                 { facingMode: "environment" }, 
-                { fps: 10, qrbox: 250 },
+                { fps: 10, qrbox: { width: 250, height: 150 } },
                 (text) => {
                     document.getElementById('ean').value = text;
-                    scanner.stop();
-                    scanner = null;
-                    document.getElementById('nombre').focus();
+                    
+                    // Detener cámara al detectar
+                    scanner.stop().then(() => {
+                        scanner = null;
+                        // Iniciar la búsqueda automática
+                        buscarProductoGlobal(text);
+                    });
                 }
-            ).catch(err => alert("Error de cámara: " + err));
+            ).catch(err => console.error("Error de cámara: ", err));
         }
     }
 
+    // --- Envío a Google Sheets ---
     async function enviar() {
+        const btn = document.querySelector("button");
+        btn.disabled = true;
+        btn.innerText = "ENVIANDO...";
+
         const datos = {
             ean: document.getElementById('ean').value,
             nombre: document.getElementById('nombre').value,
@@ -98,27 +131,32 @@
             observaciones: document.getElementById('observaciones').value
         };
 
-        // Enviamos los datos a Google Sheets
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(datos)
-        });
-
-        alert("Producto registrado en la tabla.");
-        location.reload(); // Limpia el formulario
+        try {
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            alert("¡Registro guardado con éxito!");
+            location.reload(); 
+        } catch (e) {
+            alert("Error al enviar. Reintenta.");
+            btn.disabled = false;
+            btn.innerText = "ENVIAR AL ALMACÉN";
+        }
     }
-// Identifica la página actual por el nombre del archivo en la URL
-const currentPage = window.location.pathname.split("/").pop();
 
-if (currentPage === "index.html" || currentPage === "") {
-    document.getElementById("link-home").classList.add("active");
-} else if (currentPage === "escaner.html") {
-    document.getElementById("link-scan").classList.add("active");
-} else if (currentPage === "inventario.html") {
-    document.getElementById("link-list").classList.add("active");
-}</script>
+    // --- Gestión de la Navegación Activa ---
+    const currentPage = window.location.pathname.split("/").pop();
+    if (currentPage === "index.html" || currentPage === "") {
+        document.getElementById("link-home").classList.add("active");
+    } else if (currentPage === "escaner.html") {
+        document.getElementById("link-scan").classList.add("active");
+    } else if (currentPage === "inventario.html") {
+        document.getElementById("link-list").classList.add("active");
+    }
+</script>
 
 </body>
 </html>
