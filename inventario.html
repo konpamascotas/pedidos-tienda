@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner Almacén</title>
+    <!-- Librería para el escaneo de códigos de barras -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #eef2f7; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #333; text-align: center; }
+        label { display: block; margin-top: 10px; font-weight: bold; color: #555; }
+        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; background-color: #007bff; color: white; border: none; padding: 15px; border-radius: 6px; margin-top: 20px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        button:active { background-color: #0056b3; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Escanear Producto</h2>
+    
+    <!-- Contenedor visual de la cámara -->
+    <div id="reader"></div>
+
+    <label>Código EAN (Toca para activar cámara)</label>
+    <input type="text" id="ean" placeholder="Esperando escaneo..." onfocus="activarEscaner()">
+    
+    <label>Nombre del Producto</label>
+    <input type="text" id="nombre" id="nombreInput" placeholder="Ej. Pantalón Denim">
+    
+    <label>Unidades</label>
+    <input type="number" id="unidades" value="1">
+    
+    <label>Observaciones</label>
+    <input type="text" id="observaciones" placeholder="Opcional">
+    
+    <button onclick="enviarDatos()">ENVIAR A TABLA</button>
+</div>
+
+<script>
+    // SUSTITUYE ESTA URL por la de tu implementación de Google Apps Script
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMqPWMvazKQk41sD4ZGCSvlmQU2_sFTNY9e-ECjyqCR8fHTbJifppE0t8Vbzgdv6UC-g/exec";
+
+    let html5QrCode;
+
+    function activarEscaner() {
+        const readerElement = document.getElementById('reader');
+        readerElement.style.display = 'block';
+
+        html5QrCode = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            config,
+            (decodedText) => {
+                // Al detectar el código:
+                document.getElementById('ean').value = decodedText;
+                cerrarEscaner();
+                document.getElementById('nombre').focus();
+            }
+        ).catch(err => console.error("Error al iniciar cámara: ", err));
+    }
+
+    function cerrarEscaner() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('reader').style.display = 'none';
+            });
+        }
+    }
+
+    async function enviarDatos() {
+        const payload = {
+            ean: document.getElementById('ean').value,
+            nombre: document.getElementById('nombre').value,
+            unidades: document.getElementById('unidades').value,
+            observaciones: document.getElementById('observaciones').value
+        };
+
+        if (!payload.ean || !payload.nombre) {
+            alert("Por favor, completa el EAN y el Nombre");
+            return;
+        }
+
+        try {
+            // Envío de datos mediante el método fetch (POST)
+            await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            alert("✅ Enviado al almacén con éxito");
+            // Reiniciar campos
+            document.getElementById('ean').value = "";
+            document.getElementById('nombre').value = "";
+            document.getElementById('observaciones').value = "";
+        } catch (error) {
+            alert("❌ Error al enviar: " + error);
+        }
+    }
+</script>
+
+</body>
+</html>

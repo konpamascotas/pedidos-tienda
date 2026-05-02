@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner de Tienda</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; }
+        .caja { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; background-color: #28a745; color: white; padding: 14px; border: none; border-radius: 4px; font-weight: bold; }
+        #reader { width: 100%; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="caja">
+    <h3>Reposición de Productos</h3>
+    
+    <div id="reader"></div>
+
+    <!-- REQUISITO: La cámara se activa al entrar en este campo -->
+    <label>EAN:</label>
+    <input type="text" id="ean" placeholder="Toca para escanear" onfocus="iniciarCamara()">
+    
+    <label>Producto:</label>
+    <input type="text" id="nombre" placeholder="Nombre del artículo">
+    
+    <label>Unidades:</label>
+    <input type="number" id="unidades" value="1">
+    
+    <label>Observaciones:</label>
+    <input type="text" id="observaciones">
+    
+    <button onclick="enviar()">ENVIAR AL ALMACÉN</button>
+</div>
+
+<script>
+    // ************************************************************
+    // AQUÍ ES DONDE DEBES PEGAR TU URL:
+    // ************************************************************
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMqPWMvazKQk41sD4ZGCSvlmQU2_sFTNY9e-ECjyqCR8fHTbJifppE0t8Vbzgdv6UC-g/exec"; 
+
+    let scanner;
+
+    function iniciarCamara() {
+        if (!scanner) {
+            scanner = new Html5Qrcode("reader");
+            scanner.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: 250 },
+                (text) => {
+                    document.getElementById('ean').value = text;
+                    scanner.stop();
+                    scanner = null;
+                    document.getElementById('nombre').focus();
+                }
+            ).catch(err => alert("Error de cámara: " + err));
+        }
+    }
+
+    async function enviar() {
+        const datos = {
+            ean: document.getElementById('ean').value,
+            nombre: document.getElementById('nombre').value,
+            unidades: document.getElementById('unidades').value,
+            observaciones: document.getElementById('observaciones').value
+        };
+
+        // Enviamos los datos a Google Sheets
+        await fetch(WEB_APP_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+
+        alert("Producto registrado en la tabla.");
+        location.reload(); // Limpia el formulario
+    }
+</script>
+
+</body>
+</html>
