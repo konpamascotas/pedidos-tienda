@@ -17,11 +17,12 @@
     display: flex;
     justify-content: space-around;
     background-color: #333;
-    padding: 10px 0;
+    padding: 12px 0;
     position: sticky;
     top: 0;
     z-index: 1000;
     margin-bottom: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 .nav-link {
@@ -29,19 +30,19 @@
     text-decoration: none;
     font-size: 14px;
     font-weight: bold;
-    padding: 8px 12px;
-    border-radius: 4px;
+    padding: 8px 15px;
+    border-radius: 5px;
 }
 
-/* Clase para resaltar la página activa */
+/* Resalta la página donde te encuentras */
 .nav-link.active {
     background-color: #28a745;
-} </style>
+}</style>
 </head>
 <body>
     <h2>Artículos en Almacén</h2>
     <p id="estado" class="status">Cargando lista...</p>
-    <nav class="navbar">
+<nav class="navbar">
     <a href="index.html" class="nav-link" id="link-home">Inicio</a>
     <a href="escaner.html" class="nav-link" id="link-scan">Escáner</a>
     <a href="inventario.html" class="nav-link" id="link-list">Inventario</a>
@@ -89,11 +90,15 @@
         }
 
         obtenerDatos();
-// Detecta la página actual y añade la clase 'active' al enlace correspondiente
-const path = window.location.pathname;
-if (path.includes("index")) document.getElementById("link-home").classList.add("active");
-if (path.includes("escaner")) document.getElementById("link-scan").classList.add("active");
-if (path.includes("inventario")) document.getElementById("link-list").classList.add("active");
-    </script>
+// Identifica la página actual por el nombre del archivo en la URL
+const currentPage = window.location.pathname.split("/").pop();
+
+if (currentPage === "index.html" || currentPage === "") {
+    document.getElementById("link-home").classList.add("active");
+} else if (currentPage === "escaner.html") {
+    document.getElementById("link-scan").classList.add("active");
+} else if (currentPage === "inventario.html") {
+    document.getElementById("link-list").classList.add("active");
+} </script>
 </body>
 </html>
