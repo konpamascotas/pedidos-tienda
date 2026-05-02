@@ -3,108 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escáner Almacén</title>
-    <!-- Librería para el escaneo de códigos de barras -->
-    <script src="https://unpkg.com/html5-qrcode"></script>
+    <title>Inventario Escaneado</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #eef2f7; padding: 15px; }
-        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h2 { color: #333; text-align: center; }
-        label { display: block; margin-top: 10px; font-weight: bold; color: #555; }
-        input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background-color: #007bff; color: white; border: none; padding: 15px; border-radius: 6px; margin-top: 20px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        button:active { background-color: #0056b3; }
-        #reader { width: 100%; border-radius: 8px; overflow: hidden; margin-bottom: 10px; display: none; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 15px; }
+        .tabla-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; min-width: 400px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #28a745; color: white; }
+        tr:nth-child(even) { background: #f9f9f9; }
+        .status { text-align: center; margin-bottom: 10px; color: #666; }
     </style>
 </head>
 <body>
-
-<div class="card">
-    <h2>Escanear Producto</h2>
+    <h2>Artículos en Almacén</h2>
+    <p id="estado" class="status">Cargando lista...</p>
     
-    <!-- Contenedor visual de la cámara -->
-    <div id="reader"></div>
+    <div class="tabla-container">
+        <table id="tabla-datos">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cant.</th>
+                    <th>EAN</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Aquí se insertarán los datos -->
+            </tbody>
+        </table>
+    </div>
 
-    <label>Código EAN (Toca para activar cámara)</label>
-    <input type="text" id="ean" placeholder="Esperando escaneo..." onfocus="activarEscaner()">
-    
-    <label>Nombre del Producto</label>
-    <input type="text" id="nombre" id="nombreInput" placeholder="Ej. Pantalón Denim">
-    
-    <label>Unidades</label>
-    <input type="number" id="unidades" value="1">
-    
-    <label>Observaciones</label>
-    <input type="text" id="observaciones" placeholder="Opcional">
-    
-    <button onclick="enviarDatos()">ENVIAR A TABLA</button>
-</div>
+    <script>
+        // PEGA AQUÍ LA NUEVA URL DE TU SCRIPT DE GOOGLE
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxLRz9rbWr7pHk9qfBPAfZykq4gt65cjYzcy1SCzWF6WzCQ8WOIsoAoETSQ7pT_6n1xUg/exec";
 
-<script>
-    // SUSTITUYE ESTA URL por la de tu implementación de Google Apps Script
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzMqPWMvazKQk41sD4ZGCSvlmQU2_sFTNY9e-ECjyqCR8fHTbJifppE0t8Vbzgdv6UC-g/exec";
+        async function obtenerDatos() {
+            try {
+                const respuesta = await fetch(SCRIPT_URL);
+                const articulos = await respuesta.json();
+                const cuerpoTabla = document.querySelector("#tabla-datos tbody");
+                
+                cuerpoTabla.innerHTML = ""; // Limpiar tabla
 
-    let html5QrCode;
-
-    function activarEscaner() {
-        const readerElement = document.getElementById('reader');
-        readerElement.style.display = 'block';
-
-        html5QrCode = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            config,
-            (decodedText) => {
-                // Al detectar el código:
-                document.getElementById('ean').value = decodedText;
-                cerrarEscaner();
-                document.getElementById('nombre').focus();
+                articulos.reverse().forEach(art => { // reverse() para ver lo último primero
+                    const fila = `<tr>
+                        <td>${art.nombre}</td>
+                        <td>${art.unidades}</td>
+                        <td>${art.ean}</td>
+                    </tr>`;
+                    cuerpoTabla.innerHTML += fila;
+                });
+                
+                document.getElementById("estado").innerText = "Sincronizado con Google Sheets";
+            } catch (error) {
+                document.getElementById("estado").innerText = "Error al cargar datos";
             }
-        ).catch(err => console.error("Error al iniciar cámara: ", err));
-    }
-
-    function cerrarEscaner() {
-        if (html5QrCode) {
-            html5QrCode.stop().then(() => {
-                document.getElementById('reader').style.display = 'none';
-            });
-        }
-    }
-
-    async function enviarDatos() {
-        const payload = {
-            ean: document.getElementById('ean').value,
-            nombre: document.getElementById('nombre').value,
-            unidades: document.getElementById('unidades').value,
-            observaciones: document.getElementById('observaciones').value
-        };
-
-        if (!payload.ean || !payload.nombre) {
-            alert("Por favor, completa el EAN y el Nombre");
-            return;
         }
 
-        try {
-            // Envío de datos mediante el método fetch (POST)
-            await fetch(WEB_APP_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            alert("✅ Enviado al almacén con éxito");
-            // Reiniciar campos
-            document.getElementById('ean').value = "";
-            document.getElementById('nombre').value = "";
-            document.getElementById('observaciones').value = "";
-        } catch (error) {
-            alert("❌ Error al enviar: " + error);
-        }
-    }
-</script>
-
+        obtenerDatos();
+    </script>
 </body>
 </html>
