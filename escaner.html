@@ -71,29 +71,32 @@
 </div>
 
 <script>
+    // URL de tu Google Apps Script (el "puente" hacia Odoo)
     const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxZNE3P1wx5yBldUdKdSQABDaNKFZxzwFHlm-B7eVlBriYEzQLPsNuNLSNV_fiTWuqgKw/exec"; 
 
     let scanner;
 
-    // --- Lógica de Búsqueda Global ---
-    async function buscarProductoGlobal(ean) {
+    // --- NUEVA LÓGICA DE BÚSQUEDA EN ODOO ---
+    async function buscarEnOdoo(ean) {
         const campoNombre = document.getElementById('nombre');
-        campoNombre.value = "Buscando..."; // Estado inicial sugerido
+        campoNombre.value = "Buscando en Odoo..."; 
 
         try {
-            const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${ean}.json`);
+            // Llamamos a tu Google Script enviando el EAN en la URL (?ean=...)
+            const response = await fetch(`${WEB_APP_URL}?ean=${ean}`);
             const data = await response.json();
 
-            if (data.status === 1 && data.product.product_name) {
-                campoNombre.value = data.product.product_name;
+            // Si el script de Google nos devuelve un nombre, lo ponemos
+            if (data.nombre && !data.nombre.includes("Error")) {
+                campoNombre.value = data.nombre;
             } else {
-                campoNombre.value = ""; // No encontrado: en blanco
+                campoNombre.value = ""; // No encontrado o error: dejar vacío
             }
         } catch (error) {
-            console.error("Error en búsqueda:", error);
-            campoNombre.value = ""; // Error de red: en blanco
+            console.error("Error conectando con el script:", error);
+            campoNombre.value = ""; 
         }
-        // Después de buscar (éxito o fallo), movemos el foco a Unidades
+        // Saltamos a unidades para seguir el flujo
         document.getElementById('unidades').focus();
     }
 
@@ -110,8 +113,8 @@
                     // Detener cámara al detectar
                     scanner.stop().then(() => {
                         scanner = null;
-                        // Iniciar la búsqueda automática
-                        buscarProductoGlobal(text);
+                        // LLAMADA A LA FUNCIÓN DE ODOO
+                        buscarEnOdoo(text);
                     });
                 }
             ).catch(err => console.error("Error de cámara: ", err));
@@ -149,12 +152,12 @@
 
     // --- Gestión de la Navegación Activa ---
     const currentPage = window.location.pathname.split("/").pop();
-    if (currentPage === "index.html" || currentPage === "") {
-        document.getElementById("link-home").classList.add("active");
-    } else if (currentPage === "escaner.html") {
+    if (currentPage === "escaner.html") {
         document.getElementById("link-scan").classList.add("active");
     } else if (currentPage === "inventario.html") {
         document.getElementById("link-list").classList.add("active");
+    } else {
+        document.getElementById("link-home").classList.add("active");
     }
 </script>
 
